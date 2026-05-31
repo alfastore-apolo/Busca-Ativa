@@ -3,7 +3,7 @@ name: Implantar no Firebase Hosting
 on:
   push:
     branches:
-      - principal
+      - main
 
 jobs:
   implantar:
