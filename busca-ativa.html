@@ -3189,9 +3189,6 @@ h1,h2,h3{
     // sync ownerEditSerie
     const osel = document.getElementById('ownerEditSerie');
     if(osel){ const ocur=osel.value; osel.innerHTML=arr.map(t=>`<option${t===ocur?' selected':''}>${t}</option>`).join(''); }
-    // sync owner edit select
-    const osel = document.getElementById('ownerEditSerie');
-    if(osel){ const ocur=osel.value; osel.innerHTML=arr.map(t=>`<option${t===ocur?' selected':''}>${t}</option>`).join(''); }
   }
 
   function renderAdminTurmas(){
