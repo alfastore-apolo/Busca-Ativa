@@ -2023,14 +2023,9 @@ h1,h2,h3{
     };
 
     const app = initializeApp(firebaseConfig);
+    // Expõe sha256 globalmente (definida em script normal antes deste módulo)
+    // window.sha256 já está disponível
 
-    // ── SHA-256 via Web Crypto API ──
-    async function sha256(message) {
-      const msgBuffer = new TextEncoder().encode(message);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-      return Array.from(new Uint8Array(hashBuffer))
-        .map(b => b.toString(16).padStart(2, '0')).join('');
-    }
 
     const db  = getDatabase(app);
     const lockRef = ref(db, 'sistema/bloqueado');
@@ -2963,6 +2958,43 @@ h1,h2,h3{
     <!-- Lista de alunos -->
     <div id="ownerStudentList"></div>
 
+
+    <div class="oadmin-div"></div>
+
+    <!-- EDITAR MENSAGENS WHATSAPP -->
+    <div class="oadmin-sec">✉️ Mensagens WhatsApp</div>
+
+    <!-- Seletor de tipo -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;">
+      <button onclick="admTplSelect('critico',1)" id="admTplBtn_critico_1"
+        class="adm-tpl-btn adm-tpl-active">🚨 Padrão<br><small>Alto Risco</small></button>
+      <button onclick="admTplSelect('critico',2)" id="admTplBtn_critico_2"
+        class="adm-tpl-btn">⚠️ Urgente<br><small>Alto Risco</small></button>
+      <button onclick="admTplSelect('critico',3)" id="admTplBtn_critico_3"
+        class="adm-tpl-btn">💙 Convite<br><small>Alto Risco</small></button>
+      <button onclick="admTplSelect('atencao',1)" id="admTplBtn_atencao_1"
+        class="adm-tpl-btn">🚨 Padrão<br><small>Médio Risco</small></button>
+      <button onclick="admTplSelect('atencao',2)" id="admTplBtn_atencao_2"
+        class="adm-tpl-btn">⚠️ Urgente<br><small>Médio Risco</small></button>
+      <button onclick="admTplSelect('atencao',3)" id="admTplBtn_atencao_3"
+        class="adm-tpl-btn">💙 Convite<br><small>Médio Risco</small></button>
+    </div>
+
+    <!-- Dica de placeholders -->
+    <div class="adm-tpl-hint">
+      Variáveis: <b>{nome}</b> · <b>{primeiro}</b> · <b>{faltas}</b> · <b>{serie}</b> · <b>{assinatura}</b>
+    </div>
+
+    <!-- Textarea -->
+    <textarea id="admTplTextarea" class="adm-tpl-textarea" rows="8"
+      placeholder="Selecione uma mensagem acima para editar..."></textarea>
+
+    <!-- Ações -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+      <button onclick="admTplSalvar()" class="adm-tpl-save-btn">💾 Salvar</button>
+      <button onclick="admTplRestaurar()" class="adm-tpl-restore-btn">↩ Restaurar</button>
+    </div>
+
     <!-- Modal de edição inline -->
     <div id="ownerEditModal" style="display:none;">
       <div class="oadmin-edit-card">
@@ -2986,6 +3018,78 @@ h1,h2,h3{
 </div>
 
 <style>
+
+/* ── EDITOR MENSAGENS WA (painel admin) ── */
+.adm-tpl-btn {
+  padding: 8px 4px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.6);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  line-height: 1.4;
+  transition: all 0.15s;
+}
+.adm-tpl-btn.adm-tpl-active {
+  background: rgba(99,102,241,0.5);
+  border-color: rgba(99,102,241,0.8);
+  color: #fff;
+}
+.adm-tpl-hint {
+  font-size: 11px;
+  color: rgba(255,255,255,0.35);
+  background: rgba(255,255,255,0.05);
+  border-radius: 8px;
+  padding: 7px 10px;
+  margin-bottom: 10px;
+  line-height: 1.6;
+}
+.adm-tpl-hint b { color: rgba(255,255,255,0.6); }
+.adm-tpl-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(255,255,255,0.07);
+  color: #fff;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 13px;
+  font-family: var(--font);
+  resize: vertical;
+  outline: none;
+  line-height: 1.6;
+  transition: border-color 0.2s;
+}
+.adm-tpl-textarea:focus {
+  border-color: rgba(99,102,241,0.8);
+}
+.adm-tpl-save-btn {
+  background: linear-gradient(135deg,#6366f1,#4f46e5);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: var(--font);
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(99,102,241,0.4);
+}
+.adm-tpl-restore-btn {
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.7);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+}
+
 /* ── OWNER ESCOLA PHONE ── */
 .oadmin-escola-card {
   background: rgba(255,255,255,0.08);
@@ -3224,6 +3328,16 @@ h1,h2,h3{
 </style>
 
 <script>
+// ── SHA-256 global via Web Crypto API ──
+window.sha256 = async function(message) {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map(b => b.toString(16).padStart(2, '0')).join('');
+};
+</script>
+
+<script>
 
 /* ── ADMIN: gerenciar turmas inline ── */
 (function(){
@@ -3423,8 +3537,57 @@ function ownerPainelAberto() {
       <button class="wa-msg-tab" id="waTab2" onclick="switchWaTab(2)">Urgente</button>
       <button class="wa-msg-tab" id="waTab3" onclick="switchWaTab(3)">Convite</button>
     </div>
-    <div class="wa-modal-section-label">Mensagem</div>
+    <!-- Label + botão editar (só para admin) -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:0 20px 8px;">
+      <div class="wa-modal-section-label" style="padding:0;margin:0;">Mensagem</div>
+      <button id="waBtnEditarMsg" onclick="waToggleEditorMsg()"
+        style="display:none;align-items:center;gap:5px;background:rgba(0,122,255,0.1);border:1px solid rgba(0,122,255,0.25);color:var(--blue);border-radius:8px;padding:5px 11px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;">
+        ✏️ Editar modelo
+      </button>
+    </div>
+
     <textarea class="wa-msg-preview" id="waMsgPreview" readonly style="resize:none;width:100%;box-sizing:border-box;font-family:var(--font);border:none;border-radius:12px;outline:none;cursor:default;"></textarea>
+
+    <!-- Painel de edição inline (só admin) -->
+    <div id="waEditorMsg" style="display:none;margin:0 20px 14px;background:var(--surface2);border-radius:14px;padding:14px;border:1.5px solid var(--blue);">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--blue);margin-bottom:10px;">✏️ Editar modelo desta mensagem</div>
+
+      <!-- Dica de variáveis -->
+      <div style="font-size:11px;color:var(--label3);background:var(--bg);border-radius:8px;padding:7px 10px;margin-bottom:10px;line-height:1.7;">
+        Variáveis: <b>{nome}</b> · <b>{primeiro}</b> · <b>{faltas}</b> · <b>{serie}</b> · <b>{assinatura}</b>
+      </div>
+
+      <!-- Textarea de edição -->
+      <textarea id="waEditorTextarea" rows="7"
+        oninput="waEditorAtualizarPreview()"
+        style="width:100%;box-sizing:border-box;background:var(--surface);color:var(--label);border:1.5px solid var(--separator);border-radius:10px;padding:10px 12px;font-size:13px;font-family:var(--font);resize:vertical;outline:none;line-height:1.6;transition:border-color 0.2s;"
+        onfocus="this.style.borderColor='var(--blue)'"
+        onblur="this.style.borderColor='var(--separator)'"
+        placeholder="Digite o modelo da mensagem..."></textarea>
+
+      <!-- Preview do modelo -->
+      <div id="waEditorPreviewWrap" style="display:none;margin-top:8px;">
+        <div style="font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--label3);margin-bottom:4px;">👁 Prévia</div>
+        <div id="waEditorPreview" style="background:var(--surface);border:1px solid var(--separator);border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.65;color:var(--label);white-space:pre-wrap;word-break:break-word;font-family:var(--font);"></div>
+      </div>
+
+      <!-- Botões -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px;">
+        <button onclick="waEditorSalvar()"
+          style="background:var(--blue);color:#fff;border:none;border-radius:10px;padding:11px 8px;font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;">
+          💾 Salvar
+        </button>
+        <button onclick="waEditorRestaurar()"
+          style="background:var(--surface);color:var(--label2);border:1px solid var(--separator);border-radius:10px;padding:11px 8px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;">
+          ↩ Padrão
+        </button>
+        <button onclick="waToggleEditorMsg()"
+          style="background:var(--red-bg);color:var(--red);border:none;border-radius:10px;padding:11px 8px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;">
+          ✕ Fechar
+        </button>
+      </div>
+    </div>
+
     <div class="wa-actions">
       <button class="wa-btn-send" onclick="sendWaAlert()">
         <span>💬</span> Abrir no WhatsApp
@@ -6228,7 +6391,7 @@ window.abrirPainelOwner = function() {
   setTimeout(() => ownerSelectTemplate('critico', 1), 100);
 };
 
-    window.copyWaMsg = function() {
+window.copyWaMsg = function() {
       const ta = document.getElementById('waMsgPreview');
       navigator.clipboard.writeText(ta.value).then(() => {
         if (typeof showToast === 'function') showToast('📋 Mensagem copiada!');
@@ -6236,6 +6399,229 @@ window.abrirPainelOwner = function() {
         ta.select(); document.execCommand('copy');
       });
     };
+
+// ── EDITOR INLINE DE MENSAGEM NO MODAL WA (só para admin) ──
+
+// Mostra/esconde botão editar conforme estado do admin
+function waAtualizarBotaoEditar() {
+  const btn = document.getElementById('waBtnEditarMsg');
+  if (!btn) return;
+  btn.style.display = (typeof adminLogado !== 'undefined' && adminLogado) ? 'flex' : 'none';
+}
+
+// Abre/fecha o painel de edição dentro do modal
+window.waToggleEditorMsg = function() {
+  const editor = document.getElementById('waEditorMsg');
+  const preview = document.getElementById('waMsgPreview');
+  if (!editor) return;
+
+  const abrindo = editor.style.display === 'none';
+  editor.style.display = abrindo ? 'block' : 'none';
+
+  if (abrindo) {
+    // Carrega o template atual (personalizado ou padrão com placeholders)
+    const s = waCurrentStudent;
+    if (!s) return;
+    const key = s.status + '_' + waCurrentTab;
+    const ta = document.getElementById('waEditorTextarea');
+
+    if (window._waCustomTemplates && window._waCustomTemplates[key]) {
+      ta.value = window._waCustomTemplates[key];
+    } else {
+      // Gera texto padrão com placeholders
+      const mockS = {
+        name: new String('{nome}'),
+        absences: '{faltas}',
+        serie: '{serie}',
+        professor: '',
+        motivos: s.motivos || [],
+        status: s.status,
+      };
+      mockS.name.split = () => ['{primeiro}', ''];
+      mockS.name.endsWith = () => false;
+      try {
+        const rawFn = window.waMessages?.[s.status]?.[waCurrentTab];
+        ta.value = rawFn ? rawFn(mockS) : preview.value;
+      } catch(e) { ta.value = preview.value; }
+    }
+    waEditorAtualizarPreview();
+    setTimeout(() => editor.scrollIntoView({ behavior:'smooth', block:'nearest' }), 80);
+  }
+};
+
+// Atualiza o preview do editor com dados reais do aluno atual
+window.waEditorAtualizarPreview = function() {
+  const ta = document.getElementById('waEditorTextarea');
+  const prev = document.getElementById('waEditorPreview');
+  const wrap = document.getElementById('waEditorPreviewWrap');
+  if (!ta || !prev || !wrap) return;
+
+  const s = waCurrentStudent;
+  const assinatura = window._assinaturaMensagem || 'A Direção';
+  const texto = ta.value;
+
+  if (!texto.trim()) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+
+  const nome    = s ? s.name : 'Nome do Aluno';
+  const primeiro = s ? s.name.split(' ')[0] : 'Nome';
+  const faltas   = s ? s.absences : '0';
+  const serie    = s ? s.serie : '—';
+
+  prev.textContent = texto
+    .replace(/\{nome\}/g, nome)
+    .replace(/\{primeiro\}/g, primeiro)
+    .replace(/\{faltas\}/g, faltas)
+    .replace(/\{serie\}/g, serie)
+    .replace(/\{assinatura\}/g, assinatura);
+};
+
+// Salva o template editado e atualiza o preview do modal
+window.waEditorSalvar = function() {
+  const s = waCurrentStudent;
+  if (!s) return;
+  const ta = document.getElementById('waEditorTextarea');
+  if (!ta || !ta.value.trim()) { showToast('⚠️ A mensagem não pode estar vazia'); return; }
+
+  if (!window._waCustomTemplates) window._waCustomTemplates = {};
+  const key = s.status + '_' + waCurrentTab;
+  window._waCustomTemplates[key] = ta.value.trim();
+  localStorage.setItem('waCustomTemplates', JSON.stringify(window._waCustomTemplates));
+
+  // Atualiza o textarea principal com a mensagem renderizada
+  renderWaMsg();
+  showToast('✅ Modelo salvo!');
+};
+
+// Restaura o template padrão
+window.waEditorRestaurar = function() {
+  const s = waCurrentStudent;
+  if (!s) return;
+  const key = s.status + '_' + waCurrentTab;
+
+  if (window._waCustomTemplates) delete window._waCustomTemplates[key];
+  localStorage.setItem('waCustomTemplates', JSON.stringify(window._waCustomTemplates || {}));
+
+  // Recarrega o editor com o padrão
+  const mockS = {
+    name: new String('{nome}'),
+    absences: '{faltas}',
+    serie: '{serie}',
+    professor: '',
+    motivos: s.motivos || [],
+    status: s.status,
+  };
+  mockS.name.split = () => ['{primeiro}', ''];
+  mockS.name.endsWith = () => false;
+  try {
+    const rawFn = window.waMessages?.[s.status]?.[waCurrentTab];
+    const ta = document.getElementById('waEditorTextarea');
+    if (ta) { ta.value = rawFn ? rawFn(mockS) : ''; waEditorAtualizarPreview(); }
+  } catch(e) {}
+
+  renderWaMsg();
+  showToast('↩ Modelo restaurado ao padrão');
+};
+
+// Garante que o botão seja atualizado quando o admin loga/desloga
+const _origAtualizarBadgeAdmin = window.atualizarBadgeAdmin;
+window.atualizarBadgeAdmin = function() {
+  if (typeof _origAtualizarBadgeAdmin === 'function') _origAtualizarBadgeAdmin();
+  waAtualizarBotaoEditar();
+};
+
+// Fecha editor ao trocar de aba de mensagem
+const _origSwitchWaTab = window.switchWaTab;
+window.switchWaTab = function(n) {
+  const editor = document.getElementById('waEditorMsg');
+  if (editor) editor.style.display = 'none';
+  if (typeof _origSwitchWaTab === 'function') _origSwitchWaTab(n);
+  waAtualizarBotaoEditar();
+};
+
+// Fecha editor ao abrir o modal
+const _origOpenWaModal = window.openWaModal;
+window.openWaModal = function(studentId) {
+  const editor = document.getElementById('waEditorMsg');
+  if (editor) editor.style.display = 'none';
+  if (typeof _origOpenWaModal === 'function') _origOpenWaModal(studentId);
+  waAtualizarBotaoEditar();
+};
+
+// ── EDITOR DE MENSAGENS — PAINEL ADMINISTRADOR ──
+window._admTplCurrent = { status: 'critico', tab: 1 };
+
+window.admTplSelect = function(status, tab) {
+  window._admTplCurrent = { status, tab };
+
+  // Atualiza visual dos botões
+  ['critico','atencao'].forEach(st => {
+    [1,2,3].forEach(t => {
+      const btn = document.getElementById('admTplBtn_' + st + '_' + t);
+      if (!btn) return;
+      btn.classList.toggle('adm-tpl-active', st === status && t === tab);
+    });
+  });
+
+  // Carrega texto no textarea
+  const ta = document.getElementById('admTplTextarea');
+  if (!ta) return;
+  const key = status + '_' + tab;
+  const custom = window._waCustomTemplates && window._waCustomTemplates[key];
+
+  if (custom) {
+    ta.value = custom;
+  } else {
+    // Gera texto padrão com placeholders
+    const mockS = {
+      name: '{nome}',
+      absences: '{faltas}',
+      serie: '{serie}',
+      professor: '',
+      motivos: [],
+      status,
+    };
+    // Patch para name.split retornar {primeiro}
+    mockS.name = new String('{nome}');
+    mockS.name.split = () => ['{primeiro}', ''];
+    mockS.name.endsWith = () => false;
+    try {
+      const rawFn = window.waMessages?.[status]?.[tab];
+      ta.value = rawFn ? rawFn(mockS) : '';
+    } catch(e) { ta.value = ''; }
+  }
+};
+
+window.admTplSalvar = function() {
+  const { status, tab } = window._admTplCurrent;
+  const ta = document.getElementById('admTplTextarea');
+  if (!ta || !ta.value.trim()) { showToast('⚠️ Escreva a mensagem antes de salvar'); return; }
+  if (!window._waCustomTemplates) window._waCustomTemplates = {};
+  window._waCustomTemplates[status + '_' + tab] = ta.value.trim();
+  localStorage.setItem('waCustomTemplates', JSON.stringify(window._waCustomTemplates));
+  showToast('✅ Mensagem salva!');
+};
+
+window.admTplRestaurar = function() {
+  const { status, tab } = window._admTplCurrent;
+  if (window._waCustomTemplates) delete window._waCustomTemplates[status + '_' + tab];
+  localStorage.setItem('waCustomTemplates', JSON.stringify(window._waCustomTemplates || {}));
+  admTplSelect(status, tab);
+  showToast('↩ Mensagem restaurada ao padrão');
+};
+
+// Carrega primeiro template ao abrir painel admin
+const _origAbrirLoginAdmin = window.abrirLoginAdmin;
+window.abrirLoginAdmin = function() {
+  if (typeof _origAbrirLoginAdmin === 'function') _origAbrirLoginAdmin();
+};
+
+// Carrega ao exibir painel admin após login
+const _origVerifSenha = window.verificarSenhaAdmin;
+window.verificarSenhaAdmin = async function() {
+  if (typeof _origVerifSenha === 'function') await _origVerifSenha();
+  setTimeout(() => admTplSelect('critico', 1), 200);
+};
 </script>
 
 </body>
