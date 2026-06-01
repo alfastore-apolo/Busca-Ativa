@@ -2294,11 +2294,13 @@ h1,h2,h3{
             <span>📱 WhatsApp da Escola</span>
             <span style="font-size:10px;color:var(--blue);background:var(--blue-bg);padding:2px 7px;border-radius:6px;">Encaminhamentos</span>
           </div>
-          <div class="escola-phone-row">
+          <!-- Edição: visível apenas para admin/proprietário -->
+          <div id="escolaPhoneEditRow" class="escola-phone-row" style="display:none;">
             <input class="escola-phone-input" id="escolaPhoneInput" type="tel"
               placeholder="(92) 99999-9999" />
             <button class="escola-phone-save" onclick="saveEscolaPhone()">Salvar</button>
           </div>
+          <!-- Leitura: visível para todos -->
           <div class="escola-phone-preview" id="escolaPhonePreview"></div>
         </div>
       </div>
@@ -4681,12 +4683,20 @@ self.addEventListener('fetch', e => {
     function renderEscolaPhonePreview() {
       const inp     = document.getElementById('escolaPhoneInput');
       const preview = document.getElementById('escolaPhonePreview');
-      if (!inp || !preview) return;
+      if (!preview) return;
       const display = escolaPhone.replace(/^55(\d{2})(\d{4,5})(\d{4})$/, '($1) $2-$3');
-      inp.value = display || '';
+      if (inp) inp.value = display || '';
       preview.textContent = display
         ? `Encaminhamentos serão enviados para ${display}`
         : 'Nenhum número cadastrado.';
+      atualizarVisibilidadeEscolaPhone();
+    }
+
+    function atualizarVisibilidadeEscolaPhone() {
+      const editRow = document.getElementById('escolaPhoneEditRow');
+      if (!editRow) return;
+      const podeEditar = adminLogado || proprietarioLogado;
+      editRow.style.display = podeEditar ? 'flex' : 'none';
     }
 
     /* sync do campo no painel do proprietário */
@@ -4942,6 +4952,8 @@ Gerado em: ${dataHora}`;
       if (typeof adminRenderTurmas === 'function') adminRenderTurmas();
       if (typeof ownerInitEscolaPhone === 'function') ownerInitEscolaPhone();
 
+      proprietarioLogado = true;
+      atualizarVisibilidadeEscolaPhone();
       showToast('👑 Acesso do proprietário liberado!');
     }
 
@@ -5877,12 +5889,14 @@ body.dark .alfa-text,
 /* ── ADMIN: login / logout ── */
 const ADMIN_PASSWORD = 'CETIDariana2023';
 let adminLogado = false;
+let proprietarioLogado = false;
 
 function abrirLoginAdmin() {
   if (adminLogado) {
     // Already logged in — logout
     adminLogado = false;
     atualizarBadgeAdmin();
+    atualizarVisibilidadeEscolaPhone();
     showToast('👋 Saiu da área do administrador');
     return;
   }
@@ -5905,6 +5919,7 @@ function verificarSenhaAdmin() {
     fecharLoginAdmin();
     atualizarBadgeAdmin();
     atualizarBotaoExcluir();
+    atualizarVisibilidadeEscolaPhone();
     showToast('✅ Modo administrador ativado');
   } else {
     document.getElementById('admError').classList.remove('hidden');
