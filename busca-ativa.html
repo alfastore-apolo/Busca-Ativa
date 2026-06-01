@@ -2253,10 +2253,11 @@ h1,h2,h3{
         <div class="form-row">
           <label>Série / Turma</label>
           <select id="serie" onchange="autoFillProfessor()">
-            <option>6º A</option><option>6º B</option>
-            <option>7º A</option><option>7º B</option>
-            <option>8º A</option><option>8º B</option>
-            <option>9º A</option><option>9º B</option>
+            <option>8º Ano 1</option>
+            <option>9º Ano 1</option><option>9º Ano 2</option><option>9º Ano 3</option><option>9º Ano 4</option>
+            <option>1ª Série 1</option><option>1ª Série 2</option><option>1ª Série 3</option><option>1ª Série 4</option><option>1ª Série 5</option><option>1ª Série 6</option><option>1ª Série 7</option><option>1ª Série 8</option><option>1ª Série 9</option>
+            <option>2ª Série 1</option><option>2ª Série 2</option><option>2ª Série 3</option><option>2ª Série 4</option><option>2ª Série 5</option>
+            <option>3ª Série 1</option><option>3ª Série 2</option><option>3ª Série 3</option>
           </select>
         </div>
         <div class="form-row">
@@ -3103,7 +3104,7 @@ h1,h2,h3{
 /* ── ADMIN: gerenciar turmas inline ── */
 (function(){
   const SK = 'buscaativa_turmas';
-  function loadT(){ try{ const v=localStorage.getItem(SK); if(v) return JSON.parse(v); }catch(e){} return ['6º A','6º B','7º A','7º B','8º A','8º B','9º A','9º B']; }
+  function loadT(){ try{ const v=localStorage.getItem(SK); if(v) return JSON.parse(v); }catch(e){} return ['8º Ano 1','9º Ano 1','9º Ano 2','9º Ano 3','9º Ano 4','1ª Série 1','1ª Série 2','1ª Série 3','1ª Série 4','1ª Série 5','1ª Série 6','1ª Série 7','1ª Série 8','1ª Série 9','2ª Série 1','2ª Série 2','2ª Série 3','2ª Série 4','2ª Série 5','3ª Série 1','3ª Série 2','3ª Série 3']; }
   function saveT(arr){
     localStorage.setItem(SK, JSON.stringify(arr));
     // sync select#serie
@@ -3234,7 +3235,7 @@ function ownerStartEdit(id) {
   const sel = document.getElementById('ownerEditSerie');
   const turmas = (() => {
     try { const v = localStorage.getItem('buscaativa_turmas'); if(v) return JSON.parse(v); } catch(e){}
-    return ['6º A','6º B','7º A','7º B','8º A','8º B','9º A','9º B'];
+    return ['8º Ano 1','9º Ano 1','9º Ano 2','9º Ano 3','9º Ano 4','1ª Série 1','1ª Série 2','1ª Série 3','1ª Série 4','1ª Série 5','1ª Série 6','1ª Série 7','1ª Série 8','1ª Série 9','2ª Série 1','2ª Série 2','2ª Série 3','2ª Série 4','2ª Série 5','3ª Série 1','3ª Série 2','3ª Série 3'];
   })();
   sel.innerHTML = turmas.map(t => `<option${t===s.serie?' selected':''}>${t}</option>`).join('');
 
@@ -4100,7 +4101,7 @@ self.addEventListener('fetch', e => {
     // seriesList sempre sincronizado com buscaativa_turmas
     function getTurmasSalvas() {
       try { const v = localStorage.getItem('buscaativa_turmas'); if (v) return JSON.parse(v); } catch(e) {}
-      return ['6º A','6º B','7º A','7º B','8º A','8º B','9º A','9º B'];
+      return ['8º Ano 1','9º Ano 1','9º Ano 2','9º Ano 3','9º Ano 4','1ª Série 1','1ª Série 2','1ª Série 3','1ª Série 4','1ª Série 5','1ª Série 6','1ª Série 7','1ª Série 8','1ª Série 9','2ª Série 1','2ª Série 2','2ª Série 3','2ª Série 4','2ª Série 5','3ª Série 1','3ª Série 2','3ª Série 3'];
     }
     let seriesList = getTurmasSalvas();
 
@@ -4634,30 +4635,28 @@ self.addEventListener('fetch', e => {
 `RELATORIO DE ENCAMINHAMENTO ESCOLAR
 Programa Busca Ativa Escolar
 DATA E HORA: ${dataHora}
-${sep}DADOS DO ALUNO
 ${sep}
-
+DADOS DO ALUNO
+${sep}
 Nome do aluno (a): ${s.name}
 Serie / Turma: ${s.serie}
 Total de faltas: ${s.absences}
 Classificacao: ${statusLabel[s.status]}
-
 Responsavel: ${s.nomeResponsavel || 'Nao informado'}
 Telefone do Responsavel: ${s.phone || 'Nao informado'}
-
 Prof. Conselheiro: ${s.professor || 'Nao informado'}
-${sep}MOTIVOS IDENTIFICADOS
 ${sep}
-
+MOTIVOS IDENTIFICADOS
+${sep}
 ${motivosTexto || 'Nao especificado'}
-${sep}ENCAMINHAMENTO
 ${sep}
-
+ENCAMINHAMENTO
+${sep}
 Orgao responsavel: ${orgao.nome}
 Situacao: Encaminhado — aguardando atendimento
-${sep}OBSERVACOES
 ${sep}
-
+OBSERVACOES
+${sep}
 O professor cumpriu seu papel de identificar e relatar a situacao de risco de abandono escolar. A partir deste momento, o acompanhamento e responsabilidade do(a) ${orgao.nome}.
 =====================================================================
 Sistema Busca Ativa Escolar
@@ -4685,7 +4684,7 @@ Gerado em: ${dataHora}`;
       // Open WhatsApp escola
       const encoded = encodeURIComponent(msg);
       setTimeout(() => {
-        window.open(`https://wa.me/${escolaPhone}?text=${encoded}`, '_blank');
+        window.open(`https://web.whatsapp.com/send/?phone=${escolaPhone}&text=${encoded}&type=phone_number&app_absent=0`, '_blank');
       }, 350);
     }
 
@@ -5285,7 +5284,6 @@ function bloquearSistema(){
 
 function desbloquearSistema(){
   
-  alert('Sistema desbloqueado com sucesso.');
 }
 
 function editarTudo(){
@@ -5323,7 +5321,6 @@ function verificarBloqueio(){
 
 function bloquearSistema(){
     
-    alert('Sistema bloqueado.');
 }
 
 function desbloquearSistema(){
@@ -5338,7 +5335,6 @@ function desbloquearSistema(){
     document.body.style.pointerEvents='auto';
     document.body.style.opacity='1';
 
-    alert('Sistema desbloqueado com sucesso.');
 }
 
 // Abre painel proprietário
@@ -5421,7 +5417,6 @@ function desbloquearSistema(){
 
     document.body.style.overflow = "auto";
 
-    alert("Sistema desbloqueado com sucesso.");
 }
 
 function abrirPainelOwner(){
@@ -5492,7 +5487,7 @@ window.addEventListener("load", ()=>{
   const STORAGE_KEY = 'buscaativa_turmas';
   function loadTurmas(){
     try { const v = localStorage.getItem(STORAGE_KEY); if(v) return JSON.parse(v); } catch(e){}
-    return ['6º A','6º B','7º A','7º B','8º A','8º B','9º A','9º B'];
+    return ['8º Ano 1','9º Ano 1','9º Ano 2','9º Ano 3','9º Ano 4','1ª Série 1','1ª Série 2','1ª Série 3','1ª Série 4','1ª Série 5','1ª Série 6','1ª Série 7','1ª Série 8','1ª Série 9','2ª Série 1','2ª Série 2','2ª Série 3','2ª Série 4','2ª Série 5','3ª Série 1','3ª Série 2','3ª Série 3'];
   }
   function saveTurmas(arr){
     localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
