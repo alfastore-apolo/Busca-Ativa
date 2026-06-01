@@ -1796,6 +1796,10 @@
     .wa-msg-tab.active { background: var(--blue); color: #fff; }
     .wa-msg-tab:not(.active) { background: var(--surface2); color: var(--label2); }
     .wa-msg-preview {
+      display: block;
+      border: 1.5px solid transparent;
+      resize: none;
+      font-family: var(--font);
       background: var(--surface2);
       border-radius: var(--r-md);
       padding: 14px;
@@ -1961,6 +1965,42 @@ h1,h2,h3{
     transform: translateY(0);
   }
 }
+
+/* ── EDITOR DE ASSINATURA ── */
+.assinatura-editor-wrap {
+  background: var(--surface2);
+  border-radius: var(--r-md);
+  padding: 14px;
+  margin-top: 8px;
+}
+.assinatura-editor-label {
+  font-size: 12px; font-weight: 600; color: var(--label2);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+.assinatura-editor-input {
+  width: 100%; box-sizing: border-box;
+  background: var(--surface); color: var(--label);
+  border: 1.5px solid var(--separator);
+  border-radius: var(--r-sm); padding: 10px 12px;
+  font-size: 15px; font-family: var(--font);
+  outline: none; resize: none; min-height: 60px;
+  transition: border-color 0.2s;
+}
+.assinatura-editor-input:focus { border-color: var(--blue); }
+.assinatura-preview {
+  font-size: 12px; color: var(--label3); margin-top: 6px;
+  font-style: italic;
+}
+.assinatura-save-btn {
+  margin-top: 10px; width: 100%;
+  background: var(--blue); color: #fff;
+  border: none; border-radius: var(--r-sm);
+  padding: 10px; font-size: 14px; font-weight: 600;
+  font-family: var(--font); cursor: pointer;
+  transition: opacity 0.15s;
+}
+.assinatura-save-btn:active { opacity: 0.8; }
 
 </style>
   <!-- Firebase SDK -->
@@ -3374,8 +3414,15 @@ function ownerPainelAberto() {
       <button class="wa-msg-tab" id="waTab2" onclick="switchWaTab(2)">Urgente</button>
       <button class="wa-msg-tab" id="waTab3" onclick="switchWaTab(3)">Convite</button>
     </div>
-    <div class="wa-modal-section-label">Mensagem</div>
-    <div class="wa-msg-preview" id="waMsgPreview"></div>
+    <div class="wa-modal-section-label" style="display:flex;align-items:center;justify-content:space-between;">
+      <span>Mensagem</span>
+      <button id="waMsgEditBtn" onclick="toggleEditWaMsg()" style="font-size:12px;background:var(--blue-bg);color:var(--blue);border:none;border-radius:8px;padding:4px 10px;font-weight:600;cursor:pointer;">✏️ Editar</button>
+    </div>
+    <textarea class="wa-msg-preview" id="waMsgPreview" readonly style="resize:none;width:100%;box-sizing:border-box;font-family:var(--font);border:1.5px solid transparent;border-radius:12px;outline:none;transition:border-color 0.2s;"></textarea>
+    <div id="waMsgEditActions" style="display:none;gap:8px;margin-top:8px;">
+      <button onclick="salvarTemplateWa()" style="flex:1;background:var(--blue);color:#fff;border:none;border-radius:10px;padding:10px;font-size:14px;font-weight:600;font-family:var(--font);cursor:pointer;">💾 Salvar como padrão</button>
+      <button onclick="restaurarTemplateWa()" style="flex:1;background:var(--surface2);color:var(--label2);border:none;border-radius:10px;padding:10px;font-size:14px;font-weight:600;font-family:var(--font);cursor:pointer;">↩ Restaurar</button>
+    </div>
     <div class="wa-actions">
       <button class="wa-btn-send" onclick="sendWaAlert()">
         <span>💬</span> Abrir no WhatsApp
@@ -4372,14 +4419,14 @@ self.addEventListener('fetch', e => {
 
     const waMessages = {
       critico: {
-        1: s => `Olá, família de *${s.name}*! 👋\n\nA Equipe Escolar entrou em contato porque ${s.name.split(' ')[0]} acumula *${s.absences} faltas* neste período — o que nos preocupa muito.${formatMotivosWa(s)}\n\nPela legislação brasileira (LDB), quando um aluno ultrapassa 25% das aulas, pode ser reprovado por faltas. Estamos aqui para ajudar antes que isso aconteça. 🚨\n\nPor favor, entre em contato ou venha até a escola o quanto antes.\n\n— Prof. ${s.professor || 'Equipe Escolar'}`,
-        2: s => `⚠️ *URGENTE — ${s.name}*\n\nSituação: *${s.absences} faltas acumuladas* — ALTO RISCO de reprovação.${formatMotivosWa(s)}\n\nA escola PRECISA de contato URGENTE com a família. Por favor, ligue ou venha pessoalmente até a escola hoje.\n\nProf. Conselheiro: ${s.professor || '—'}\nTurma: ${s.serie}`,
-        3: s => `Olá! 😊 Aqui é a escola de *${s.name}*.\n\nNotamos que ${s.name.split(' ')[0]} ficou ausente com frequência (${s.absences} faltas). Gostaríamos de marcar uma conversa para entender o que está acontecendo e como podemos ajudar juntos.${formatMotivosWa(s)}\n\nPode vir na escola ou nos chamar aqui pelo WhatsApp. Estamos aqui por vocês! 💙\n\n— ${s.professor || 'Equipe Escolar'}`,
+        1: s => `Olá, família de *${s.name}*! 👋\n\nA Equipe Escolar entrou em contato porque ${s.name.split(' ')[0]} acumula *${s.absences} faltas* neste período — o que nos preocupa muito.${formatMotivosWa(s)}\n\nPela legislação brasileira (LDB), quando um aluno ultrapassa 25% das aulas, pode ser reprovado por faltas. Estamos aqui para ajudar antes que isso aconteça. 🚨\n\nPor favor, entre em contato ou venha até a escola o quanto antes.\n\n— ${window._assinaturaMensagem || "A Direção"}`,
+        2: s => `⚠️ *URGENTE — ${s.name}*\n\nSituação: *${s.absences} faltas acumuladas* — ALTO RISCO de reprovação.${formatMotivosWa(s)}\n\nA escola PRECISA de contato URGENTE com a família. Por favor, ligue ou venha pessoalmente até a escola hoje.\n\n${window._assinaturaMensagem || "A Direção"}\nTurma: ${s.serie}`,
+        3: s => `Olá! 😊 Aqui é a escola de *${s.name}*.\n\nNotamos que ${s.name.split(' ')[0]} ficou ausente com frequência (${s.absences} faltas). Gostaríamos de marcar uma conversa para entender o que está acontecendo e como podemos ajudar juntos.${formatMotivosWa(s)}\n\nPode vir na escola ou nos chamar aqui pelo WhatsApp. Estamos aqui por vocês! 💙\n\n— ${window._assinaturaMensagem || "A Direção"}`,
       },
       atencao: {
-        1: s => `Olá, família de *${s.name}*! 👋\n\nA escola notou que ${s.name.split(' ')[0]} faltou *${s.absences} vezes* nas últimas semanas. Gostaríamos de conversar para entender como podemos apoiá-l${s.name.split(' ')[0].endsWith('a') ? 'a' : 'o'}.${formatMotivosWa(s)}\n\nEstamos aqui para garantir que ${s.name.split(' ')[0]} continue aprendendo. 💙\n\nPor favor, entre em contato quando puder.\n\n— Prof. ${s.professor || 'Equipe Escolar'}`,
-        2: s => `⚠️ *Atenção — ${s.name} (${s.serie})*\n\n${s.absences} faltas registradas.${formatMotivosWa(s)}\n\nImportante que a família entre em contato para evitar agravamento da situação.\n\nContato: Prof. ${s.professor || 'Equipe Escolar'}`,
-        3: s => `Oi! 😊 Tudo bem?\n\nSou da escola de *${s.name}* e queria saber como estão as coisas por aí. Notamos ${s.absences} faltas e ficamos curiosos para saber se está tudo bem com ${s.name.split(' ')[0]}.${formatMotivosWa(s)}\n\nQualquer coisa, pode contar com a gente! 🏫\n\n— ${s.professor || 'Equipe Escolar'}`,
+        1: s => `Olá, família de *${s.name}*! 👋\n\nA escola notou que ${s.name.split(' ')[0]} faltou *${s.absences} vezes* nas últimas semanas. Gostaríamos de conversar para entender como podemos apoiá-l${s.name.split(' ')[0].endsWith('a') ? 'a' : 'o'}.${formatMotivosWa(s)}\n\nEstamos aqui para garantir que ${s.name.split(' ')[0]} continue aprendendo. 💙\n\nPor favor, entre em contato quando puder.\n\n— ${window._assinaturaMensagem || "A Direção"}`,
+        2: s => `⚠️ *Atenção — ${s.name} (${s.serie})*\n\n${s.absences} faltas registradas.${formatMotivosWa(s)}\n\nImportante que a família entre em contato para evitar agravamento da situação.\n\nContato: ${window._assinaturaMensagem || "A Direção"}`,
+        3: s => `Oi! 😊 Tudo bem?\n\nSou da escola de *${s.name}* e queria saber como estão as coisas por aí. Notamos ${s.absences} faltas e ficamos curiosos para saber se está tudo bem com ${s.name.split(' ')[0]}.${formatMotivosWa(s)}\n\nQualquer coisa, pode contar com a gente! 🏫\n\n— ${window._assinaturaMensagem || "A Direção"}`,
       }
     };
 
@@ -4425,16 +4472,43 @@ self.addEventListener('fetch', e => {
       renderWaMsg();
     }
 
+    // Templates personalizados salvos pelo proprietário
+    window._waCustomTemplates = JSON.parse(localStorage.getItem('waCustomTemplates') || '{}');
+
+    function _waTemplateKey(status, tab) { return status + '_' + tab; }
+
     function renderWaMsg() {
       const s = waCurrentStudent;
       if (!s) return;
-      const msgFn = waMessages[s.status]?.[waCurrentTab] || waMessages['atencao'][1];
-      document.getElementById('waMsgPreview').textContent = msgFn(s);
+      const key = _waTemplateKey(s.status, waCurrentTab);
+      let msg;
+      if (window._waCustomTemplates[key]) {
+        // Usa template personalizado, substituindo placeholders
+        msg = window._waCustomTemplates[key]
+          .replace(/\{nome\}/g, s.name)
+          .replace(/\{primeiro\}/g, s.name.split(' ')[0])
+          .replace(/\{faltas\}/g, s.absences)
+          .replace(/\{serie\}/g, s.serie)
+          .replace(/\{assinatura\}/g, window._assinaturaMensagem || 'A Direção');
+      } else {
+        const msgFn = waMessages[s.status]?.[waCurrentTab] || waMessages['atencao'][1];
+        msg = msgFn(s);
+      }
+      const ta = document.getElementById('waMsgPreview');
+      ta.value = msg;
+      // Ajusta altura
+      ta.style.height = 'auto';
+      ta.style.height = Math.min(ta.scrollHeight, 320) + 'px';
+      // Reset edit mode
+      ta.readOnly = true;
+      ta.style.borderColor = 'transparent';
+      document.getElementById('waMsgEditBtn').textContent = '✏️ Editar';
+      document.getElementById('waMsgEditActions').style.display = 'none';
     }
 
     function getWaMsgText() {
       const s = waCurrentStudent;
-      const msgFn = waMessages[s.status]?.[waCurrentTab] || waMessages['atencao'][1];
+      const msgFn = () => document.getElementById('waMsgPreview').value;
       return msgFn(s);
     }
 
@@ -5385,6 +5459,16 @@ Gerado em: ${dataHora}`;
       </div>
     </button>
 
+
+    <div class="owner-divider"></div>
+    <div class="owner-section-label">Mensagens WhatsApp</div>
+    <div class="assinatura-editor-wrap">
+      <div class="assinatura-editor-label">✍️ Assinatura das mensagens</div>
+      <textarea class="assinatura-editor-input" id="assinaturaInput" rows="2" placeholder="Ex: A Direção"></textarea>
+      <div class="assinatura-preview" id="assinaturaPreview">Prévia: — A Direção</div>
+      <button class="assinatura-save-btn" onclick="salvarAssinatura()">💾 Salvar assinatura</button>
+    </div>
+
     <!-- Info -->
     <div class="owner-info-card">
       <div class="owner-info-icon">ℹ️</div>
@@ -5967,6 +6051,102 @@ if ('serviceWorker' in navigator) {
       .catch(err => console.warn('[SW] Falha ao registrar:', err));
   });
 }
+
+// ── ASSINATURA DAS MENSAGENS ──
+(function() {
+  // Carrega assinatura salva ou usa padrão
+  window._assinaturaMensagem = localStorage.getItem('assinaturaMensagem') || 'A Direção';
+
+  // Atualiza preview ao digitar
+  const input = document.getElementById('assinaturaInput');
+  const preview = document.getElementById('assinaturaPreview');
+  if (input) {
+    input.value = window._assinaturaMensagem;
+    input.addEventListener('input', () => {
+      preview.textContent = 'Prévia: — ' + (input.value || 'A Direção');
+    });
+  }
+
+  window.salvarAssinatura = function() {
+    const val = (document.getElementById('assinaturaInput').value.trim()) || 'A Direção';
+    window._assinaturaMensagem = val;
+    localStorage.setItem('assinaturaMensagem', val);
+    showToast('✅ Assinatura salva: ' + val);
+  };
+
+  // Abre o editor com valor atual ao abrir painel
+  window._origAbrirPainelOwner = window.abrirPainelOwner;
+  window.abrirPainelOwner = function() {
+    if (typeof window._origAbrirPainelOwner === 'function') window._origAbrirPainelOwner();
+    const inp = document.getElementById('assinaturaInput');
+    const prev = document.getElementById('assinaturaPreview');
+    if (inp) {
+      inp.value = window._assinaturaMensagem;
+      if (prev) prev.textContent = 'Prévia: — ' + inp.value;
+    }
+  };
+})();
+
+    // ── EDIÇÃO DE MENSAGENS WA ──
+    window.toggleEditWaMsg = function() {
+      const ta = document.getElementById('waMsgPreview');
+      const btn = document.getElementById('waMsgEditBtn');
+      const actions = document.getElementById('waMsgEditActions');
+      if (ta.readOnly) {
+        ta.readOnly = false;
+        ta.style.borderColor = 'var(--blue)';
+        ta.style.background = 'var(--surface)';
+        btn.textContent = '✕ Cancelar';
+        actions.style.display = 'flex';
+        ta.focus();
+      } else {
+        // Cancela edição, restaura mensagem
+        renderWaMsg();
+      }
+    };
+
+    window.salvarTemplateWa = function() {
+      const s = waCurrentStudent;
+      if (!s) return;
+      const ta = document.getElementById('waMsgPreview');
+      const key = _waTemplateKey(s.status, waCurrentTab);
+      // Salva o texto exato como template (mantém texto atual)
+      window._waCustomTemplates[key] = ta.value
+        // Substitui valores atuais por placeholders para reutilizar
+        .replace(new RegExp(s.name.split(' ')[0], 'g'), '{primeiro}')
+        .replace(new RegExp(s.name, 'g'), '{nome}')
+        .replace(new RegExp(s.absences, 'g'), '{faltas}')
+        .replace(new RegExp(s.serie, 'g'), '{serie}');
+      localStorage.setItem('waCustomTemplates', JSON.stringify(window._waCustomTemplates));
+      // Fecha edição
+      const btn = document.getElementById('waMsgEditBtn');
+      ta.readOnly = true;
+      ta.style.borderColor = 'transparent';
+      btn.textContent = '✏️ Editar';
+      document.getElementById('waMsgEditActions').style.display = 'none';
+      if (typeof showToast === 'function') showToast('✅ Mensagem salva como padrão!');
+    };
+
+    window.restaurarTemplateWa = function() {
+      const s = waCurrentStudent;
+      if (!s) return;
+      const key = _waTemplateKey(s.status, waCurrentTab);
+      delete window._waCustomTemplates[key];
+      localStorage.setItem('waCustomTemplates', JSON.stringify(window._waCustomTemplates));
+      renderWaMsg();
+      if (typeof showToast === 'function') showToast('↩ Mensagem restaurada ao padrão');
+    };
+
+    // Atualiza copyWaMsg para pegar do textarea
+    window.copyWaMsg = function() {
+      const ta = document.getElementById('waMsgPreview');
+      navigator.clipboard.writeText(ta.value).then(() => {
+        if (typeof showToast === 'function') showToast('📋 Mensagem copiada!');
+      }).catch(() => {
+        ta.select();
+        document.execCommand('copy');
+      });
+    };
 </script>
 
 </body>
