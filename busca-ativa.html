@@ -2026,6 +2026,76 @@ h1,h2,h3{
     window.firebaseSetLock = async function(locked) {
       await set(lockRef, locked);
     };
+
+    // ── SINCRONIZAÇÃO DE DADOS EM TEMPO REAL ──
+    const studentsRef  = ref(db, 'dados/alunos');
+    const profsRef     = ref(db, 'dados/professores');
+    const turmasRef    = ref(db, 'dados/turmas');
+
+    // Escuta alunos em tempo real — atualiza UI automaticamente
+    onValue(studentsRef, (snapshot) => {
+      if (!snapshot.exists()) return;
+      const val = snapshot.val();
+      // Firebase armazena como objeto; converte de volta para array
+      const arr = Array.isArray(val) ? val : Object.values(val);
+      if (typeof window._onFirebaseStudents === 'function') {
+        window._onFirebaseStudents(arr);
+      }
+    });
+
+    // Escuta professores em tempo real
+    onValue(profsRef, (snapshot) => {
+      if (!snapshot.exists()) return;
+      if (typeof window._onFirebaseProfs === 'function') {
+        window._onFirebaseProfs(snapshot.val());
+      }
+    });
+
+    // Escuta turmas em tempo real
+    onValue(turmasRef, (snapshot) => {
+      if (!snapshot.exists()) return;
+      const val = snapshot.val();
+      const arr = Array.isArray(val) ? val : Object.values(val);
+      if (typeof window._onFirebaseTurmas === 'function') {
+        window._onFirebaseTurmas(arr);
+      }
+    });
+
+    // Funções globais de escrita no Firebase
+    window.firebaseSaveStudents = async function(arr) {
+      try { await set(studentsRef, arr); } catch(e) { console.warn('Firebase write error:', e); }
+    };
+    window.firebaseSaveProfs = async function(obj) {
+      try { await set(profsRef, obj); } catch(e) { console.warn('Firebase write error:', e); }
+    };
+    window.firebaseSaveTurmas = async function(arr) {
+      try { await set(turmasRef, arr); } catch(e) { console.warn('Firebase write error:', e); }
+    };
+
+    // Carrega dados iniciais do Firebase (fallback para localStorage se offline)
+    window._firebaseDataLoaded = false;
+    get(studentsRef).then(snap => {
+      if (snap.exists()) {
+        const val = snap.val();
+        const arr = Array.isArray(val) ? val : Object.values(val);
+        if (typeof window._onFirebaseStudents === 'function') window._onFirebaseStudents(arr);
+      }
+      window._firebaseDataLoaded = true;
+    }).catch(() => { window._firebaseDataLoaded = true; });
+
+    get(profsRef).then(snap => {
+      if (snap.exists() && typeof window._onFirebaseProfs === 'function') {
+        window._onFirebaseProfs(snap.val());
+      }
+    }).catch(() => {});
+
+    get(turmasRef).then(snap => {
+      if (snap.exists() && typeof window._onFirebaseTurmas === 'function') {
+        const val = snap.val();
+        const arr = Array.isArray(val) ? val : Object.values(val);
+        window._onFirebaseTurmas(arr);
+      }
+    }).catch(() => {});
   </script>
 </head>
 <body>
@@ -3455,11 +3525,19 @@ self.addEventListener('fetch', e => {
     }
 
     function saveData() {
+      // Salva localmente como fallback offline
       try {
         localStorage.setItem(LS_STUDENTS, JSON.stringify(students));
         localStorage.setItem(LS_PROFS,    JSON.stringify(professorDB));
       } catch(e) {
         console.warn('localStorage indisponível:', e);
+      }
+      // Sincroniza com Firebase em tempo real
+      if (typeof window.firebaseSaveStudents === 'function') {
+        window.firebaseSaveStudents(students);
+      }
+      if (typeof window.firebaseSaveProfs === 'function') {
+        window.firebaseSaveProfs(professorDB);
       }
     }
 
@@ -3467,6 +3545,49 @@ self.addEventListener('fetch', e => {
     const _loaded = loadData();
     let students    = _loaded.students;
     let professorDB = _loaded.professorDB;
+
+    // ── CALLBACKS DO FIREBASE EM TEMPO REAL ──
+    // Chamado sempre que os dados mudam no Firebase (outro dispositivo editou)
+    window._onFirebaseStudents = function(arr) {
+      // Só atualiza se os dados do Firebase forem diferentes dos locais
+      const fbJson = JSON.stringify(arr);
+      const localJson = JSON.stringify(students);
+      if (fbJson === localJson) return;
+      students = arr;
+      // Persiste localmente como cache offline
+      try { localStorage.setItem(LS_STUDENTS, JSON.stringify(students)); } catch(e) {}
+      // Atualiza UI
+      updateDashboard();
+      // Se estiver na tela de detalhe, atualiza o aluno selecionado
+      if (selectedStudent) {
+        const updated = students.find(s => s.id === selectedStudent.id);
+        if (updated) selectedStudent = updated;
+      }
+    };
+
+    window._onFirebaseProfs = function(obj) {
+      const fbJson = JSON.stringify(obj);
+      const localJson = JSON.stringify(professorDB);
+      if (fbJson === localJson) return;
+      professorDB = obj;
+      try { localStorage.setItem(LS_PROFS, JSON.stringify(professorDB)); } catch(e) {}
+      // Atualiza lista de professores se estiver visível
+      if (document.getElementById('profList') &&
+          !document.getElementById('professores-view').classList.contains('hidden')) {
+        renderProfList();
+      }
+    };
+
+    window._onFirebaseTurmas = function(arr) {
+      try {
+        const cur = localStorage.getItem('buscaativa_turmas');
+        if (JSON.stringify(arr) === cur) return;
+        localStorage.setItem('buscaativa_turmas', JSON.stringify(arr));
+        // Atualiza select de séries
+        syncSerieSelectFromSaved();
+        if (typeof renderListaTurmas === 'function') renderListaTurmas(arr);
+      } catch(e) {}
+    };
 
     /* ── RESTORE THEME ── */
     (function() {
@@ -5493,6 +5614,10 @@ window.addEventListener("load", ()=>{
     localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
     syncSerieSelect(arr);
     if(typeof seriesList !== 'undefined') seriesList.length=0, arr.forEach(t=>seriesList.push(t));
+    // Sincroniza com Firebase
+    if (typeof window.firebaseSaveTurmas === 'function') {
+      window.firebaseSaveTurmas(arr);
+    }
   }
   function syncSerieSelect(arr){
     const sel = document.getElementById('serie');
