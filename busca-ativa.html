@@ -1248,6 +1248,8 @@
     .prof-row.editing { background:var(--blue-bg); }
     .prof-edit-input {
       flex:1;
+      min-width:0;
+      max-width:calc(100% - 90px);
       border:none; outline:none;
       background:var(--surface);
       border-radius:8px;
@@ -4805,7 +4807,7 @@ Gerado em: ${dataHora}`;
       // Open WhatsApp escola
       const encoded = encodeURIComponent(msg);
       setTimeout(() => {
-        window.open(`https://web.whatsapp.com/send/?phone=${escolaPhone}&text=${encoded}&type=phone_number&app_absent=0`, '_blank');
+        window.open(`https://wa.me/55${escolaPhone.replace(/\D/g,'')}?text=${encoded}`, '_blank');
       }, 350);
     }
 
