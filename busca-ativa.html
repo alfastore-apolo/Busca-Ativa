@@ -2023,6 +2023,15 @@ h1,h2,h3{
     };
 
     const app = initializeApp(firebaseConfig);
+
+    // ── SHA-256 via Web Crypto API ──
+    async function sha256(message) {
+      const msgBuffer = new TextEncoder().encode(message);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      return Array.from(new Uint8Array(hashBuffer))
+        .map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
     const db  = getDatabase(app);
     const lockRef = ref(db, 'sistema/bloqueado');
 
@@ -3414,15 +3423,8 @@ function ownerPainelAberto() {
       <button class="wa-msg-tab" id="waTab2" onclick="switchWaTab(2)">Urgente</button>
       <button class="wa-msg-tab" id="waTab3" onclick="switchWaTab(3)">Convite</button>
     </div>
-    <div class="wa-modal-section-label" style="display:flex;align-items:center;justify-content:space-between;">
-      <span>Mensagem</span>
-      <button id="waMsgEditBtn" onclick="toggleEditWaMsg()" style="font-size:12px;background:var(--blue-bg);color:var(--blue);border:none;border-radius:8px;padding:4px 10px;font-weight:600;cursor:pointer;">✏️ Editar</button>
-    </div>
-    <textarea class="wa-msg-preview" id="waMsgPreview" readonly style="resize:none;width:100%;box-sizing:border-box;font-family:var(--font);border:1.5px solid transparent;border-radius:12px;outline:none;transition:border-color 0.2s;"></textarea>
-    <div id="waMsgEditActions" style="display:none;gap:8px;margin-top:8px;">
-      <button onclick="salvarTemplateWa()" style="flex:1;background:var(--blue);color:#fff;border:none;border-radius:10px;padding:10px;font-size:14px;font-weight:600;font-family:var(--font);cursor:pointer;">💾 Salvar como padrão</button>
-      <button onclick="restaurarTemplateWa()" style="flex:1;background:var(--surface2);color:var(--label2);border:none;border-radius:10px;padding:10px;font-size:14px;font-weight:600;font-family:var(--font);cursor:pointer;">↩ Restaurar</button>
-    </div>
+    <div class="wa-modal-section-label">Mensagem</div>
+    <textarea class="wa-msg-preview" id="waMsgPreview" readonly style="resize:none;width:100%;box-sizing:border-box;font-family:var(--font);border:none;border-radius:12px;outline:none;cursor:default;"></textarea>
     <div class="wa-actions">
       <button class="wa-btn-send" onclick="sendWaAlert()">
         <span>💬</span> Abrir no WhatsApp
@@ -4502,8 +4504,6 @@ self.addEventListener('fetch', e => {
       // Reset edit mode
       ta.readOnly = true;
       ta.style.borderColor = 'transparent';
-      document.getElementById('waMsgEditBtn').textContent = '✏️ Editar';
-      document.getElementById('waMsgEditActions').style.display = 'none';
     }
 
     function getWaMsgText() {
@@ -4900,7 +4900,7 @@ Gerado em: ${dataHora}`;
        🔥 Sincronizado via Firebase Realtime DB
        → Um bloqueio afeta TODOS os dispositivos
     ══════════════════════════════════════════ */
-    const OWNER_PASSWORD = 'Atlanta';
+    const OWNER_PASSWORD_HASH = 'a6c2221569febb76282953aabf85f648511cbe327a8b20580e6029998184cdeb'; // SHA-256 — senha não exposta
 
     // Estado local (será sobrescrito pelo Firebase em tempo real)
     let isLocked = false;
@@ -5004,8 +5004,9 @@ Gerado em: ${dataHora}`;
       const inp = document.getElementById('ownerKeyInput');
       const err = document.getElementById('ownerModalError');
       const val = inp.value.trim();
+      const valHash = await sha256(val);
 
-      if (val !== OWNER_PASSWORD) {
+      if (valHash !== OWNER_PASSWORD_HASH) {
         inp.classList.add('error');
         err.classList.remove('hidden');
         inp.value = '';
@@ -5459,6 +5460,61 @@ Gerado em: ${dataHora}`;
       </div>
     </button>
 
+
+
+    <div class="owner-divider"></div>
+    <div class="owner-section-label">✏️ Editar Mensagens WhatsApp</div>
+
+    <!-- Seletor de tipo de mensagem -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+      <button onclick="ownerSelectTemplate('critico',1)" id="ownerTplBtn_critico_1"
+        style="padding:8px 4px;border-radius:10px;border:2px solid var(--blue);background:var(--blue);color:#fff;font-size:12px;font-weight:600;font-family:var(--font);cursor:pointer;">
+        🚨 Padrão<br><small>Alto Risco</small>
+      </button>
+      <button onclick="ownerSelectTemplate('critico',2)" id="ownerTplBtn_critico_2"
+        style="padding:8px 4px;border-radius:10px;border:2px solid var(--separator);background:var(--surface2);color:var(--label2);font-size:12px;font-weight:600;font-family:var(--font);cursor:pointer;">
+        ⚠️ Urgente<br><small>Alto Risco</small>
+      </button>
+      <button onclick="ownerSelectTemplate('critico',3)" id="ownerTplBtn_critico_3"
+        style="padding:8px 4px;border-radius:10px;border:2px solid var(--separator);background:var(--surface2);color:var(--label2);font-size:12px;font-weight:600;font-family:var(--font);cursor:pointer;">
+        💙 Convite<br><small>Alto Risco</small>
+      </button>
+      <button onclick="ownerSelectTemplate('atencao',1)" id="ownerTplBtn_atencao_1"
+        style="padding:8px 4px;border-radius:10px;border:2px solid var(--separator);background:var(--surface2);color:var(--label2);font-size:12px;font-weight:600;font-family:var(--font);cursor:pointer;">
+        🚨 Padrão<br><small>Médio Risco</small>
+      </button>
+      <button onclick="ownerSelectTemplate('atencao',2)" id="ownerTplBtn_atencao_2"
+        style="padding:8px 4px;border-radius:10px;border:2px solid var(--separator);background:var(--surface2);color:var(--label2);font-size:12px;font-weight:600;font-family:var(--font);cursor:pointer;">
+        ⚠️ Urgente<br><small>Médio Risco</small>
+      </button>
+      <button onclick="ownerSelectTemplate('atencao',3)" id="ownerTplBtn_atencao_3"
+        style="padding:8px 4px;border-radius:10px;border:2px solid var(--separator);background:var(--surface2);color:var(--label2);font-size:12px;font-weight:600;font-family:var(--font);cursor:pointer;">
+        💙 Convite<br><small>Médio Risco</small>
+      </button>
+    </div>
+
+    <!-- Dica de placeholders -->
+    <div style="font-size:11px;color:var(--label3);background:var(--surface2);border-radius:8px;padding:8px 10px;margin-bottom:10px;line-height:1.6;">
+      Use: <b>{nome}</b> · <b>{primeiro}</b> · <b>{faltas}</b> · <b>{serie}</b> · <b>{assinatura}</b>
+    </div>
+
+    <!-- Textarea do template -->
+    <textarea id="ownerTplTextarea" rows="8"
+      style="width:100%;box-sizing:border-box;background:var(--surface);color:var(--label);border:1.5px solid var(--separator);border-radius:12px;padding:12px;font-size:14px;font-family:var(--font);resize:vertical;outline:none;transition:border-color 0.2s;line-height:1.6;"
+      onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--separator)'"
+      placeholder="Selecione um tipo de mensagem acima para editar..."></textarea>
+
+    <!-- Botões salvar / restaurar -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+      <button onclick="ownerSalvarTemplate()"
+        style="background:var(--blue);color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:600;font-family:var(--font);cursor:pointer;">
+        💾 Salvar
+      </button>
+      <button onclick="ownerRestaurarTemplate()"
+        style="background:var(--surface2);color:var(--label2);border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:600;font-family:var(--font);cursor:pointer;">
+        ↩ Restaurar padrão
+      </button>
+    </div>
 
     <div class="owner-divider"></div>
     <div class="owner-section-label">Mensagens WhatsApp</div>
@@ -5969,7 +6025,7 @@ body.dark .alfa-text,
 
 <script>
 /* ── ADMIN: login / logout ── */
-const ADMIN_PASSWORD = 'CETIDariana2023';
+const ADMIN_PASSWORD_HASH = 'd99903054b52823a734825b7ca7b6d620faec835ba1d9960ff1330ecc3235c45'; // SHA-256 — senha não exposta
 let adminLogado = false;
 let proprietarioLogado = false;
 
@@ -5994,9 +6050,11 @@ function fecharLoginAdmin() {
   document.getElementById('adminLoginOverlay').style.display = 'none';
 }
 
-function verificarSenhaAdmin() {
+async function verificarSenhaAdmin() {
   const senha = document.getElementById('admPasswordInput').value;
-  if (senha === ADMIN_PASSWORD) {
+  // SHA-256 async check
+  const senhaHash = await sha256(senha);
+  if (senhaHash === ADMIN_PASSWORD_HASH) {
     adminLogado = true;
     fecharLoginAdmin();
     atualizarBadgeAdmin();
@@ -6087,64 +6145,95 @@ if ('serviceWorker' in navigator) {
   };
 })();
 
-    // ── EDIÇÃO DE MENSAGENS WA ──
-    window.toggleEditWaMsg = function() {
-      const ta = document.getElementById('waMsgPreview');
-      const btn = document.getElementById('waMsgEditBtn');
-      const actions = document.getElementById('waMsgEditActions');
-      if (ta.readOnly) {
-        ta.readOnly = false;
-        ta.style.borderColor = 'var(--blue)';
-        ta.style.background = 'var(--surface)';
-        btn.textContent = '✕ Cancelar';
-        actions.style.display = 'flex';
-        ta.focus();
-      } else {
-        // Cancela edição, restaura mensagem
-        renderWaMsg();
+
+// ── EDITOR DE TEMPLATES NO PAINEL DO PROPRIETÁRIO ──
+window._ownerTplCurrent = { status: 'critico', tab: 1 };
+
+window.ownerSelectTemplate = function(status, tab) {
+  window._ownerTplCurrent = { status, tab };
+
+  // Atualiza visual dos botões
+  ['critico','atencao'].forEach(st => {
+    [1,2,3].forEach(t => {
+      const btn = document.getElementById('ownerTplBtn_' + st + '_' + t);
+      if (!btn) return;
+      const active = (st === status && t === tab);
+      btn.style.background = active ? 'var(--blue)' : 'var(--surface2)';
+      btn.style.color = active ? '#fff' : 'var(--label2)';
+      btn.style.borderColor = active ? 'var(--blue)' : 'var(--separator)';
+    });
+  });
+
+  // Carrega texto atual (personalizado ou padrão)
+  const ta = document.getElementById('ownerTplTextarea');
+  if (!ta) return;
+  const key = status + '_' + tab;
+  const custom = window._waCustomTemplates && window._waCustomTemplates[key];
+
+  if (custom) {
+    ta.value = custom;
+  } else {
+    // Gera mensagem padrão com placeholders visíveis
+    const mock = { name: '{nome}', absences: '{faltas}', serie: '{serie}', professor: '', motivos: [], status };
+    mock.name.split = (sep) => ['{primeiro}', ''];
+    // Usar texto bruto do template
+    const rawFn = window.waMessages && window.waMessages[status] && window.waMessages[status][tab];
+    if (rawFn) {
+      // Cria mock que retorna placeholders
+      const mockS = {
+        name: '{nome}',
+        absences: '{faltas}',
+        serie: '{serie}',
+        professor: '',
+        motivos: [],
+        status,
+      };
+      // Patch split para retornar [{primeiro}]
+      mockS.name = '{nome}';
+      mockS.name.split = () => ['{primeiro}'];
+      try {
+        let txt = rawFn(mockS);
+        ta.value = txt;
+      } catch(e) {
+        ta.value = custom || '';
       }
-    };
+    }
+  }
+};
 
-    window.salvarTemplateWa = function() {
-      const s = waCurrentStudent;
-      if (!s) return;
-      const ta = document.getElementById('waMsgPreview');
-      const key = _waTemplateKey(s.status, waCurrentTab);
-      // Salva o texto exato como template (mantém texto atual)
-      window._waCustomTemplates[key] = ta.value
-        // Substitui valores atuais por placeholders para reutilizar
-        .replace(new RegExp(s.name.split(' ')[0], 'g'), '{primeiro}')
-        .replace(new RegExp(s.name, 'g'), '{nome}')
-        .replace(new RegExp(s.absences, 'g'), '{faltas}')
-        .replace(new RegExp(s.serie, 'g'), '{serie}');
-      localStorage.setItem('waCustomTemplates', JSON.stringify(window._waCustomTemplates));
-      // Fecha edição
-      const btn = document.getElementById('waMsgEditBtn');
-      ta.readOnly = true;
-      ta.style.borderColor = 'transparent';
-      btn.textContent = '✏️ Editar';
-      document.getElementById('waMsgEditActions').style.display = 'none';
-      if (typeof showToast === 'function') showToast('✅ Mensagem salva como padrão!');
-    };
+window.ownerSalvarTemplate = function() {
+  const { status, tab } = window._ownerTplCurrent;
+  const ta = document.getElementById('ownerTplTextarea');
+  if (!ta || !ta.value.trim()) { showToast('⚠️ Escreva a mensagem antes de salvar'); return; }
+  if (!window._waCustomTemplates) window._waCustomTemplates = {};
+  const key = status + '_' + tab;
+  window._waCustomTemplates[key] = ta.value.trim();
+  localStorage.setItem('waCustomTemplates', JSON.stringify(window._waCustomTemplates));
+  showToast('✅ Mensagem salva!');
+};
 
-    window.restaurarTemplateWa = function() {
-      const s = waCurrentStudent;
-      if (!s) return;
-      const key = _waTemplateKey(s.status, waCurrentTab);
-      delete window._waCustomTemplates[key];
-      localStorage.setItem('waCustomTemplates', JSON.stringify(window._waCustomTemplates));
-      renderWaMsg();
-      if (typeof showToast === 'function') showToast('↩ Mensagem restaurada ao padrão');
-    };
+window.ownerRestaurarTemplate = function() {
+  const { status, tab } = window._ownerTplCurrent;
+  const key = status + '_' + tab;
+  if (window._waCustomTemplates) delete window._waCustomTemplates[key];
+  localStorage.setItem('waCustomTemplates', JSON.stringify(window._waCustomTemplates || {}));
+  ownerSelectTemplate(status, tab); // Recarrega texto padrão
+  showToast('↩ Mensagem restaurada ao padrão');
+};
 
-    // Atualiza copyWaMsg para pegar do textarea
+// Abre selecionando o primeiro ao abrir painel
+const _origAbrirOwner2 = window.abrirPainelOwner;
+window.abrirPainelOwner = function() {
+  if (typeof _origAbrirOwner2 === 'function') _origAbrirOwner2();
+  setTimeout(() => ownerSelectTemplate('critico', 1), 100);
+};
+
     window.copyWaMsg = function() {
       const ta = document.getElementById('waMsgPreview');
       navigator.clipboard.writeText(ta.value).then(() => {
         if (typeof showToast === 'function') showToast('📋 Mensagem copiada!');
       }).catch(() => {
-        ta.select();
-        document.execCommand('copy');
+        ta.select(); document.execCommand('copy');
       });
     };
 </script>
